@@ -82,7 +82,7 @@ export function BulkVocabularyUpload({
 
   const templates = {
     csv: `korean_word,bangla_meaning,romanization,part_of_speech,explanation,themes,chapters,examples
-가다,যাওয়া,gada,verb,To move from one place to another,"daily_life, action",1,"[{""korean"":""집에 가요"",""bangla"":""I go home""}]"`,
+가다,যাওয়া,gada,verb,To move from one place to another,"transport, action",1,"[{""korean"":""집에 가요"",""bangla"":""I go home""}]"`,
     json: JSON.stringify(
       [
         {
@@ -91,7 +91,7 @@ export function BulkVocabularyUpload({
           romanization: "gada",
           part_of_speech: "verb",
           explanation: "To move from one place to another",
-          themes: ["daily_life", "action"],
+          themes: ["transport", "action"],
           chapters: [1],
           examples: [{ korean: "집에 가요", bangla: "I go home" }],
         },

@@ -70,6 +70,7 @@ export default function OpenAiStudio() {
     const [showPreview, setShowPreview] = useState(false);
     const [previewVocab, setPreviewVocab] = useState<Vocabulary | null>(null);
     const [enhancedData, setEnhancedData] = useState<Partial<Vocabulary> | null>(null);
+    const [delay, setDelay] = useState(2000); // Default 2 seconds
 
     // Resource data for stats
     const { data: resources = [], isLoading: isLoadingResources } = useResourcesSimple();
@@ -178,7 +179,31 @@ export default function OpenAiStudio() {
             });
 
             try {
-                const fieldsToEnhance = selectedFields.has("all") ? undefined : Array.from(selectedFields);
+                let fieldsToEnhance: string[] | undefined;
+                
+                if (selectedFields.has("all")) {
+                    // Dynamically determine missing fields for THIS specific vocabulary
+                    const missing = [];
+                    if (!vocab.romanization) missing.push("romanization");
+                    if (!vocab.explanation || vocab.explanation.length < 50) missing.push("explanation");
+                    if (!vocab.examples || vocab.examples.length === 0) missing.push("examples");
+                    if (!vocab.part_of_speech) missing.push("part_of_speech");
+                    if (!vocab.themes || vocab.themes.length === 0) missing.push("themes");
+                    if (!vocab.chapters || vocab.chapters.length === 0) missing.push("chapters");
+                    if (vocab.part_of_speech === "verb" && !vocab.verb_forms) missing.push("verb_forms");
+                    
+                    fieldsToEnhance = missing.length > 0 ? missing : undefined;
+                } else {
+                    fieldsToEnhance = Array.from(selectedFields);
+                }
+
+                // If nothing is missing and nothing specifically selected, skip
+                if (!fieldsToEnhance || fieldsToEnhance.length === 0) {
+                    setResults(prev => prev.map(r => r.id === vocab.id ? { ...r, status: "success" } : r));
+                    successCount++;
+                    continue;
+                }
+
                 const enhanced = await enhanceVocabulary(vocab, undefined, fieldsToEnhance);
 
                 const { error: updateError } = await supabase
@@ -207,7 +232,7 @@ export default function OpenAiStudio() {
             setProgress(((i + 1) / selected.length) * 100);
 
             if (i < selected.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
 
@@ -227,7 +252,28 @@ export default function OpenAiStudio() {
         setShowPreview(true);
 
         try {
-            const fieldsToEnhance = selectedFields.has("all") ? undefined : Array.from(selectedFields);
+            let fieldsToEnhance: string[] | undefined;
+            
+            if (selectedFields.has("all")) {
+                const missing = [];
+                if (!vocab.romanization) missing.push("romanization");
+                if (!vocab.explanation || vocab.explanation.length < 50) missing.push("explanation");
+                if (!vocab.examples || vocab.examples.length === 0) missing.push("examples");
+                if (!vocab.part_of_speech) missing.push("part_of_speech");
+                if (!vocab.themes || vocab.themes.length === 0) missing.push("themes");
+                if (!vocab.chapters || vocab.chapters.length === 0) missing.push("chapters");
+                if (vocab.part_of_speech === "verb" && !vocab.verb_forms) missing.push("verb_forms");
+                
+                fieldsToEnhance = missing.length > 0 ? missing : undefined;
+            } else {
+                fieldsToEnhance = Array.from(selectedFields);
+            }
+
+            if (!fieldsToEnhance || fieldsToEnhance.length === 0) {
+                setEnhancedData({});
+                return;
+            }
+
             const enhanced = await enhanceVocabulary(vocab, undefined, fieldsToEnhance);
             setEnhancedData(enhanced);
         } catch (error) {
@@ -398,6 +444,24 @@ export default function OpenAiStudio() {
                                         </label>
                                     ))}
                                 </div>
+                                
+                                <div className="space-y-3 pt-2 border-t border-primary/5 mt-4">
+                                    <div className="flex justify-between items-center">
+                                        <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Rate Limit Delay</Label>
+                                        <Badge variant="secondary" className="font-mono text-[10px] bg-primary/5 text-primary border-none">{delay}ms</Badge>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="500" 
+                                        max="10000" 
+                                        step="500" 
+                                        value={delay} 
+                                        onChange={(e) => setDelay(parseInt(e.target.value))}
+                                        className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                                    />
+                                    <p className="text-[9px] text-muted-foreground italic leading-tight">Wait time between each API request to avoid rate limits.</p>
+                                </div>
+
                                 <Button
                                     onClick={handleEnhanceSelected}
                                     disabled={selectedVocabs.size === 0 || isProcessing}

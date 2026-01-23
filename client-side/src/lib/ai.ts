@@ -1,3 +1,4 @@
+import { themeVocabularies } from './themeVocabularies';
 
 export interface AIResult {
     korean_word: string;
@@ -19,7 +20,7 @@ export interface AIResult {
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 const VALID_POS = ["noun", "pronoun", "numeral", "verb", "adjective", "adverb", "determiner", "particle", "ending", "auxiliary_verb", "interjection", "prefix", "suffix", "bound_noun", "counter", "copula", "conjunction"];
-const VALID_THEMES = ["daily_life", "family", "friends", "food", "shopping", "housing", "transport", "health", "weather", "time_date", "hobbies", "emotions", "clothing", "workplace", "factory", "construction", "manufacturing", "safety", "tools", "machines", "instructions", "warnings", "permissions", "schedule", "salary", "overtime", "leave", "rules", "conversation", "question_answer", "commands", "requests", "suggestions", "apology", "agreement", "disagreement", "polite_speech", "honorifics", "formal", "informal", "travel", "directions", "airport", "immigration", "hotel", "restaurant", "public_service", "bank", "post_office", "police", "emergency", "education", "classroom", "exam", "study", "language_learning", "grammar", "vocabulary", "reading", "writing", "listening", "speaking", "medical", "hospital", "medicine", "injury", "accident", "first_aid", "fire_safety", "protective_equipment", "danger", "warning_signs", "numbers", "counting", "money", "measurement", "weight", "length", "quantity", "price", "percentage", "time_management", "technology", "mobile", "internet", "computer", "applications", "devices", "repair", "electricity", "nature", "animals", "plants", "environment", "pollution", "natural_disaster", "weather_alert", "movement", "action", "change", "state", "process", "cause_effect", "permission_prohibition", "culture", "tradition", "festival", "customs", "respect", "behavior", "social_rules"];
+const VALID_THEMES = themeVocabularies;
 
 export async function generateVocabularyData(input: string): Promise<AIResult[]> {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;

@@ -73,6 +73,7 @@ export default function GeminiStudio() {
     const [previewVocab, setPreviewVocab] = useState<Vocabulary | null>(null);
     const [enhancedData, setEnhancedData] = useState<Partial<Vocabulary> | null>(null);
     const [isApplying, setIsApplying] = useState(false);
+    const [delay, setDelay] = useState(2000); // Default 2 seconds
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -226,7 +227,7 @@ export default function GeminiStudio() {
             setProgress(((i + 1) / selected.length) * 100);
 
             if (i < selected.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
 
@@ -429,6 +430,24 @@ export default function GeminiStudio() {
                                     </label>
                                 ))}
                             </div>
+
+                            <div className="space-y-3 pt-2 border-t border-slate-50 mt-4">
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rate Limit Delay</Label>
+                                    <Badge variant="secondary" className="font-mono text-[10px] bg-primary/5 text-primary border-none">{delay}ms</Badge>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    min="500" 
+                                    max="10000" 
+                                    step="500" 
+                                    value={delay} 
+                                    onChange={(e) => setDelay(parseInt(e.target.value))}
+                                    className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                                <p className="text-[9px] text-slate-400 italic leading-tight">Wait time between each API request to avoid Gemini rate limits.</p>
+                            </div>
+
                             <Button
                                 className="w-full font-bold h-11 bg-primary text-white shadow-lg shadow-primary/20 mt-4"
                                 onClick={handleEnhanceSelected}

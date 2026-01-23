@@ -1,6 +1,8 @@
 import { Vocabulary } from '@/types/vocabulary';
+import { themeVocabularies } from '@/lib/themeVocabularies';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const VALID_THEMES = themeVocabularies.join(', ');
 
 export async function enhanceVocabulary(
     vocab: Vocabulary,
@@ -14,7 +16,7 @@ export async function enhanceVocabulary(
     }
 
     const prompt = `
-    You are a Korean-Bangla language expert. Improve the following vocabulary entry.
+    You are a professional Korean-Bangla language teacher. Improve the following vocabulary entry.
     
     Current Entry:
     Korean Word: ${vocab.korean_word}
@@ -24,16 +26,17 @@ export async function enhanceVocabulary(
     Fields to Enhance: ${fieldsToEnhance ? fieldsToEnhance.join(', ') : 'All missing fields'}
     ${context ? `Extra Context: ${context}` : ''}
 
-    Rules:
-    1. For 'verb_forms': Provide present, past, future, and polite forms in Korean.
-    2. For 'explanation': Provide a detailed usage explanation in Bengali (min 50 chars).
-    3. For 'examples': Provide a JSON array of { korean: string, bangla: string } objects.
-    4. For 'themes': Provide a comma-separated array of strings (e.g., ["daily", "food"]).
-    5. For 'chapters': Provide an array of numbers (e.g., [1, 5]).
-    6. For 'romanization': Provide the Korean pronunciation in English.
-    7. For 'part_of_speech': Provide the grammatical category (e.g., "noun", "verb", "adjective").
+    Rules for each field:
+    1. 'verb_forms': If POS is verb, provide present, past, future, and polite (honorific) forms in Korean Hangul.
+    2. 'explanation': Provide a detailed usage explanation in Bengali. Include when to use it, where it's common, and stylistic nuances. Answer "who, what, where, when, why, how" if applicable. (Target: 50-150 characters).
+    3. 'examples': Provide 2 real-world sentences. Return as a JSON array of { korean: string, bangla: string }. sentences should be practical for ESP Topic learners.
+    4. 'themes': Pick 1-3 relevant categories ONLY from this list: ${VALID_THEMES}.
+    5. 'chapters': If you know the EPS Topic chapter number, provide it as an array of numbers.
+    6. 'romanization': Provide standard pronunciation in English (e.g., "sa-rang").
+    7. 'part_of_speech': Correct or confirm the grammatical category.
 
-    Return ONLY a JSON object with the enhanced fields using the exact keys requested.
+    Return ONLY a single valid JSON object. Do not include markdown formatting or extra text.
+    The keys in the JSON should map exactly to the fields requested: ${fieldsToEnhance ? fieldsToEnhance.join(', ') : 'korean_word, bangla_meaning, romanization, part_of_speech, explanation, examples, themes, chapters, verb_forms'}.
   `;
 
     const response = await fetch(OPENAI_API_URL, {
