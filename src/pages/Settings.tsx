@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Copy, Eye, EyeOff, Save, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, Save, Trash2, Download } from 'lucide-react';
+import { fetchAllVocabulary } from '@/services/vocabularyService';
+import Papa from 'papaparse';
 
 const GEMINI_KEY_STORAGE = 'gemini_api_key';
 
@@ -13,6 +15,7 @@ export default function Settings() {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const savedKey = localStorage.getItem(GEMINI_KEY_STORAGE);
@@ -34,6 +37,50 @@ export default function Settings() {
       title: 'Key Removed',
       description: 'Gemini API key deleted from local storage',
     });
+  };
+
+  const handleExportVocabulary = async (format: 'csv' | 'json') => {
+    setIsExporting(true);
+    try {
+      const vocabulary = await fetchAllVocabulary();
+
+      let content = '';
+      let type = '';
+      let extension = '';
+
+      if (format === 'csv') {
+        content = Papa.unparse(vocabulary);
+        type = 'text/csv;charset=utf-8;';
+        extension = 'csv';
+      } else {
+        content = JSON.stringify(vocabulary, null, 2);
+        type = 'application/json;charset=utf-8;';
+        extension = 'json';
+      }
+
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `vocabulary_export_${new Date().toISOString().split('T')[0]}.${extension}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: 'Export Successful',
+        description: `Exported ${vocabulary.length} vocabulary items as ${format.toUpperCase()}.`,
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export vocabulary data. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -94,69 +141,24 @@ export default function Settings() {
 
       <Card className="border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">App Metadata</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Data Version</Label>
-            <Input defaultValue="1" readOnly className="bg-muted" />
-            <p className="text-xs text-muted-foreground mt-1">
-              Increment when you update vocabulary/resources data
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">Display</CardTitle>
+          <CardTitle className="text-lg">Data Management</CardTitle>
+          <CardDescription>
+            Export your data for backup or analysis.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label>Dark Mode</Label>
-              <p className="text-xs text-muted-foreground">Enable dark theme</p>
+              <Label>Export Vocabulary</Label>
+              <p className="text-xs text-muted-foreground">Download all vocabulary data.</p>
             </div>
-            <Switch />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Korean Font Size</Label>
-              <p className="text-xs text-muted-foreground">Larger Korean text for readability</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">Storage</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Supabase URL</Label>
-            <Input defaultValue="https://vysfbzcurkswmwgptbfj.supabase.co" readOnly className="bg-muted text-xs" />
-          </div>
-          <Button variant="outline" className="w-full h-10 border-dashed hover:bg-muted/50 transition-colors">
-            Clear Local Cache
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">About</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center space-y-2 py-2">
-            <p className="font-bold text-lg">Langobridge Admin</p>
-            <p className="text-sm text-primary font-medium">
-              🇰🇷 Korean - 🇧🇩 Bangla Learning Bridge
-            </p>
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-mono border border-border">v1.0.0</span>
-              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold border border-primary/20">Production</span>
+            <div className="flex gap-2">
+              <Button onClick={() => handleExportVocabulary('csv')} disabled={isExporting} variant="outline">
+                {isExporting ? 'Exporting...' : <><Download className="mr-2 h-4 w-4" /> CSV</>}
+              </Button>
+              <Button onClick={() => handleExportVocabulary('json')} disabled={isExporting} variant="outline">
+                {isExporting ? 'Exporting...' : <><Download className="mr-2 h-4 w-4" /> JSON</>}
+              </Button>
             </div>
           </div>
         </CardContent>
